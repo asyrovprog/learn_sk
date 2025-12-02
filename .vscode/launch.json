@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Lab: Run iter01",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/lab/iter01/ConversationalMemoryLab.csproj",
+            "cwd": "${workspaceFolder}/lab/iter01",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "C#: Launch Startup Project",
+            "type": "dotnet",
+            "request": "launch"
+        }
+    ]
+}

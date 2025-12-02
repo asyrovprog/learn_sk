@@ -47,6 +47,7 @@ coverage*
 
 # .github prompt files
 .github/
+.github
 
 # User generated runtime data for labs (if any added later)
 lab/**/run-output/
