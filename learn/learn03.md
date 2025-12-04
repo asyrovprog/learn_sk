@@ -288,6 +288,68 @@ var answer = await AskWithMemory(
 Console.WriteLine(answer);
 ```
 
+### Hybrid Retrieval: Orchestrator + LLM Tools
+
+You can combine orchestrator-driven RAG with LLM-driven tool calls:
+
+- **You (host app)**: always try to fetch and prepend the most relevant memory snippets based on the user query.
+- **The model (LLM)**: can call a `SearchKnowledge` function when it needs more or different information.
+
+This gives you a "best of both" approach: strong defaults from your retrieval logic, plus flexibility for the model to query long-term memory directly.
+
+#### Example: Expose memory search as a tool
+
+```csharp
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Memory;
+
+public class KnowledgePlugin
+{
+    private readonly ISemanticTextMemory _memory;
+
+    public KnowledgePlugin(ISemanticTextMemory memory)
+    {
+        _memory = memory;
+    }
+
+    // LLM-callable function: search long-term memory
+    public async Task<string> SearchKnowledgeAsync(string query)
+    {
+        var results = _memory.SearchAsync(
+            collection: "product-knowledge",
+            query: query,
+            limit: 3,
+            minRelevanceScore: 0.6
+        );
+
+        var sb = new System.Text.StringBuilder();
+        await foreach (var r in results)
+        {
+            sb.AppendLine(r.Metadata.Text);
+        }
+
+        return sb.ToString();
+    }
+}
+
+// Registration (simplified)
+var builder = Kernel.CreateBuilder();
+// ... add chat completion + memory as before
+var kernel = builder.Build();
+
+var knowledgePlugin = new KnowledgePlugin(memory);
+kernel.ImportPluginFromObject(knowledgePlugin, "Knowledge");
+
+// In your system prompt, tell the model when to use it:
+// "If you need product details or historical information, use the
+//  `Knowledge.SearchKnowledgeAsync` tool before answering."
+```
+
+At runtime, you can still:
+
+1. Run a **pre-retrieval** using the user question and prepend results to the prompt.
+2. Let the LLM decide to call `Knowledge.SearchKnowledgeAsync` when it detects it needs more background or specific facts.
+
 ---
 
 ## Context Variables and Kernel Arguments
@@ -318,6 +380,31 @@ var prompt = """
 var result = await kernel.InvokePromptAsync(prompt, arguments);
 Console.WriteLine(result);
 ```
+
+### How context variables flow into the prompt
+
+In the example above:
+
+- The `KernelArguments` object defines three context variables:
+    - `userName = "Alice"`
+    - `language = "Spanish"`
+    - `topic = "weather"`
+- The inline prompt template references these variables with the `{{$variableName}}` syntax:
+    - `{{$userName}}` → replaced with `"Alice"`
+    - `{{$language}}` → replaced with `"Spanish"`
+    - `{{$topic}}` → replaced with `"weather"`
+
+At runtime, Semantic Kernel combines the prompt template and the context variables, so the model effectively receives a prompt like:
+
+```text
+You are talking to Alice.
+Explain weather in Spanish in simple terms.
+```
+
+This same pattern works for:
+- Values you compute in code (for example, `arguments["topic"] = userInput;`)
+- Values you retrieve from memory or previous steps in the pipeline
+- Any other dynamic data you want to inject into the prompt
 
 **Output:**
 ```

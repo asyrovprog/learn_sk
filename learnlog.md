@@ -59,7 +59,15 @@
 ## 12/03/2025
 - Step: learn
 - Id: 03
-- Status: started
+- Status: completed
 - Topic: Memory & Context Management
-- Summary: Comprehensive guide covering Chat History for conversational context, Semantic Memory with embeddings and vector databases, RAG (Retrieval Augmented Generation) pattern, Context Variables for dynamic data flow, memory management best practices, and practical implementations with code examples.
-- Materials: learn/learn03.md
+- Summary: Learned about ChatHistory, Semantic Memory, RAG patterns, vector databases (comparison of 9 different stores including VolatileMemoryStore, Azure AI Search, Qdrant, Pinecone, Chroma, Weaviate, Redis, MongoDB, PostgreSQL), TTL support, HNSW algorithm, and context management
+- Materials: /Users/asyrov/Local/git/learn_sk/learn/learn03.md
+
+## 12/03/2025
+- Step: quiz
+- Id: 03
+- Status: completed
+- Topic: Memory & Context Management
+- Result: 90%
+- Materials: /Users/asyrov/Local/git/learn_sk/learn/quiz03.md, /Users/asyrov/Local/git/learn_sk/learn/quiz03_answers.md
