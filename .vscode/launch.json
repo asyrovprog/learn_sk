@@ -13,6 +13,14 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Lab: Run iter02",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/lab/iter02/TranslationPluginLab.csproj",
+            "cwd": "${workspaceFolder}/lab/iter02",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "C#: Launch Startup Project",
             "type": "dotnet",
             "request": "launch"

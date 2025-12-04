@@ -31,7 +31,35 @@
 ## 12/01/2025
 - Step: learn
 - Id: 02
-- Status: started
+- Status: completed
 - Topic: Prompt Engineering with Semantic Functions
 - Summary: Master creating reusable semantic functions, prompt templates, inline prompts, managing prompt configurations, template variables, execution settings (temperature, tokens), chaining functions, and prompt engineering best practices in Semantic Kernel.
 - Materials: learn/learn02.md
+
+## 12/02/2025
+- Step: quiz
+- Id: 02
+- Status: completed
+- Result: 90%
+- Topic: Prompt Engineering with Semantic Functions
+
+## 12/02/2025
+- Step: lab
+- Id: 02
+- Status: completed
+- Lab: lab/iter02
+- Topic: Prompt Engineering with Semantic Functions - Multi-Language Translator Plugin
+
+## 12/02/2025
+- Step: topic
+- Id: 03
+- Status: completed
+- Topic: Memory & Context Management
+
+## 12/03/2025
+- Step: learn
+- Id: 03
+- Status: started
+- Topic: Memory & Context Management
+- Summary: Comprehensive guide covering Chat History for conversational context, Semantic Memory with embeddings and vector databases, RAG (Retrieval Augmented Generation) pattern, Context Variables for dynamic data flow, memory management best practices, and practical implementations with code examples.
+- Materials: learn/learn03.md
