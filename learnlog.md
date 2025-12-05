@@ -71,3 +71,10 @@
 - Topic: Memory & Context Management
 - Result: 90%
 - Materials: /Users/asyrov/Local/git/learn_sk/learn/quiz03.md, /Users/asyrov/Local/git/learn_sk/learn/quiz03_answers.md
+
+## 12/03/2025
+- Step: lab
+- Id: 03
+- Status: started
+- Lab: lab/iter03
+- Topic: Memory & Context Management - Multi-Turn Conversational Assistant with Semantic Memory

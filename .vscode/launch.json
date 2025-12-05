@@ -21,6 +21,14 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Lab: Run iter03",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/lab/iter03/ConversationalMemoryAssistant.csproj",
+            "cwd": "${workspaceFolder}/lab/iter03",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "C#: Launch Startup Project",
             "type": "dotnet",
             "request": "launch"
