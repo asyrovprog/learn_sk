@@ -29,6 +29,14 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Lab: Run iter04",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/lab/iter04/SmartTaskOrchestrator.csproj",
+            "cwd": "${workspaceFolder}/lab/iter04",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "C#: Launch Startup Project",
             "type": "dotnet",
             "request": "launch"

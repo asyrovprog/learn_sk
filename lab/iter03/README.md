@@ -22,7 +22,7 @@ Build a conversational AI assistant that uses **real semantic memory** with embe
 3. Build the semantic memory instance using `.Build()`
 4. Define a collection name: `"UserPreferences"`
 5. Save a user preference to semantic memory with:
-   - Collection: `"UserPreferences"`
+- Collection: `"UserPreferences"`
    - Text: `"User loves learning about AI and machine learning. Prefers detailed technical explanations."`
    - Id: `"pref_learning_style"`
    - Description: `"User's learning preferences"`

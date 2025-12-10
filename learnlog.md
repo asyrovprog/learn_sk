@@ -75,6 +75,35 @@
 ## 12/03/2025
 - Step: lab
 - Id: 03
-- Status: started
+- Status: completed
 - Lab: lab/iter03
 - Topic: Memory & Context Management - Multi-Turn Conversational Assistant with Semantic Memory
+
+## 12/07/2025
+- Step: topic
+- Id: 04
+- Status: completed
+- Topic: Planners & AI Orchestration
+
+## 12/07/2025
+- Step: learn
+- Id: 04
+- Status: completed
+- Topic: Planners & AI Orchestration
+- Summary: Comprehensive guide to Semantic Kernel planners including FunctionCallingStepwisePlanner, HandlebarsPlanner, and SequentialPlanner. Covers AI orchestration, automatic function selection, multi-step plan creation, debugging, error handling, and production patterns for building intelligent AI workflows.
+- Materials: learn/learn04.md
+
+## 12/08/2025
+- Step: quiz
+- Id: 04
+- Status: completed
+- Topic: Planners & AI Orchestration
+- Result: 70%
+- Materials: learn/quiz04.md, learn/quiz04_answers.md
+
+## 12/08/2025
+- Step: lab
+- Id: 04
+- Status: started
+- Lab: lab/iter04
+- Topic: Planners & AI Orchestration - Smart Task Orchestrator

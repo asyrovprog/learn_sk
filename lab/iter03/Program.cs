@@ -49,14 +49,59 @@ class Program
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
             Console.WriteLine("✅ PASS: Kernel and chat service ready\n");
 
-            // Test 3: Run Conversation Loop
-            Console.WriteLine("Test 3: Starting conversation loop...");
-            Console.WriteLine("(This is interactive - type some questions and then 'exit' to finish)\n");
+            // Test 3: Automated conversation test with semantic search
+            Console.WriteLine("Test 3: Testing conversation with semantic search...");
             
-            await LabTask.RunConversationLoopAsync(kernel, memory, chatService);
+            var testInputs = new[]
+            {
+                "What am I learning about?",
+                "Tell me about my current project"
+            };
             
-            Console.WriteLine("\n✅ PASS: Conversation completed successfully");
-            Console.WriteLine("\n=== All Tests Passed ===");
+            var responses = await LabTask.RunConversationLoopAsync(kernel, memory, chatService, testInputs);
+            
+            if (responses.Length != testInputs.Length)
+            {
+                Console.WriteLine($"❌ FAIL: TODO 2 - Expected {testInputs.Length} responses, got {responses.Length}");
+                Console.WriteLine("See README section 'TODO 2 – Implement Conversation Loop with Semantic Search'");
+                return;
+            }
+            
+            // Verify responses contain relevant information from memory
+            bool hasLearningReference = responses[0].Contains("AI", StringComparison.OrdinalIgnoreCase) || 
+                                       responses[0].Contains("machine learning", StringComparison.OrdinalIgnoreCase) ||
+                                       responses[0].Contains("learning", StringComparison.OrdinalIgnoreCase);
+                                       
+            bool hasProjectReference = responses[1].Contains("semantic", StringComparison.OrdinalIgnoreCase) || 
+                                      responses[1].Contains("vector", StringComparison.OrdinalIgnoreCase) ||
+                                      responses[1].Contains("database", StringComparison.OrdinalIgnoreCase) ||
+                                      responses[1].Contains("project", StringComparison.OrdinalIgnoreCase);
+            
+            if (!hasLearningReference)
+            {
+                Console.WriteLine("❌ FAIL: TODO 2 - Response doesn't reference stored learning preferences");
+                Console.WriteLine($"Response: {responses[0]}");
+                Console.WriteLine("See README section 'TODO 2 – Implement Conversation Loop with Semantic Search'");
+                return;
+            }
+            
+            if (!hasProjectReference)
+            {
+                Console.WriteLine("❌ FAIL: TODO 2 - Response doesn't reference stored project information");
+                Console.WriteLine($"Response: {responses[1]}");
+                Console.WriteLine("See README section 'TODO 2 – Implement Conversation Loop with Semantic Search'");
+                return;
+            }
+            
+            Console.WriteLine("✅ PASS: Conversation responses use semantic memory context\n");
+            
+            Console.WriteLine("=== All Tests Passed ===");
+            Console.WriteLine("\n🎓 Lab complete! Your implementation:");
+            Console.WriteLine("  ✓ Creates semantic memory with real embeddings");
+            Console.WriteLine("  ✓ Stores user preferences as vectors");
+            Console.WriteLine("  ✓ Performs vector similarity search");
+            Console.WriteLine("  ✓ Integrates memory context into conversations");
+            Console.WriteLine("  ✓ Returns personalized responses based on stored information");
         }
         catch (NotImplementedException ex)
         {
