@@ -37,6 +37,30 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Lab: Run iter05",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/lab/iter05/CoTMathReasoner.csproj",
+            "cwd": "${workspaceFolder}/lab/iter05",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Lab: Run iter05.1",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/lab/iter05.1/ContentModerationAgent.csproj",
+            "cwd": "${workspaceFolder}/lab/iter05.1",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Lab: Run iter06",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/lab/iter06/ImageClassifierQA.csproj",
+            "cwd": "${workspaceFolder}/lab/iter06",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "C#: Launch Startup Project",
             "type": "dotnet",
             "request": "launch"

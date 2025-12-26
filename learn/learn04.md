@@ -1,480 +1,638 @@
-# Learning Materials: Planners & AI Orchestration
+# Learning Materials: AI Orchestration & Multi-Step Planning
 
 **Iteration**: 04  
-**Topic**: Planners & AI Orchestration  
-**Estimated Time**: ~20 minutes  
-**Date**: December 7, 2025
+**Topic**: AI Orchestration with Automatic Function Calling  
+**Estimated Time**: ~25 minutes  
+**Date**: December 10, 2025
 
 ---
 
 ## 📚 Overview
 
-**Planners** in Semantic Kernel are powerful orchestration tools that enable AI to automatically break down complex goals into executable multi-step plans. Instead of manually chaining functions, planners leverage AI reasoning to dynamically select and sequence the right functions to achieve an objective.
+**AI Orchestration** in Semantic Kernel enables AI to automatically break down complex goals into executable multi-step workflows. Instead of manually chaining functions, the AI uses reasoning to dynamically discover, select, and sequence your plugin functions to achieve objectives.
 
-Think of a planner as an **"AI project manager"** that:
-- Analyzes your goal
-- Identifies which functions are needed
-- Determines the optimal execution order
-- Handles dependencies between steps
-- Executes the plan and returns results
+Think of it as an **"AI project manager"** that:
+- 🎯 Analyzes your natural language goal
+- 🔍 Discovers which functions are available
+- 🧩 Determines the optimal execution sequence
+- ⚡ Executes steps and handles dependencies
+- ✅ Returns the final result
 
-```mermaid
-graph TB
-    A["User Goal: Plan a trip to Paris"] --> B[Planner Analyzes Goal]
-    B --> C{Available Functions}
-    C --> D[SearchFlights]
-    C --> E[FindHotels]
-    C --> F[GetWeather]
-    C --> G[ConvertCurrency]
-    B --> H[Generate Plan]
-    H --> I["Step 1: GetWeather<br/>Step 2: SearchFlights<br/>Step 3: FindHotels<br/>Step 4: ConvertCurrency"]
-    I --> J[Execute Plan]
-    J --> K[Final Result]
-    
-    style B fill:#e1f5ff
-    style H fill:#ffe1e1
-    style J fill:#e1ffe1
+### Why AI Orchestration Matters
+
+**Without Orchestration** (Manual):
+```csharp
+// You hard-code every step
+var weather = await kernel.InvokeAsync("WeatherPlugin", "GetWeather", args);
+var flights = await kernel.InvokeAsync("TravelPlugin", "SearchFlights", args);
+var hotels = await kernel.InvokeAsync("TravelPlugin", "FindHotels", args);
+// Rigid, not adaptable to different goals
 ```
+
+**With Orchestration** (AI-Driven):
+```csharp
+// AI decides what's needed and in what order
+var result = await kernel.InvokePromptAsync(
+    "Plan a 3-day trip to Paris with good weather",
+    new(new OpenAIPromptExecutionSettings {
+        ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+    })
+);
+// AI automatically: checks weather → searches flights → finds hotels → formats results
+```
+
+**Key Benefit**: The same plugin functions can solve completely different goals without changing code. Ask for "trip to Paris" or "meeting agenda for tomorrow" - the AI orchestrates appropriately
 
 ---
 
-## 🎯 Core Concepts
+## 🚀 Modern Approach: Automatic Function Calling
 
-### What is a Planner?
+**In Semantic Kernel 1.0+, there is no need for explicit "planner" classes.** Instead, AI orchestration is built directly into the prompt execution system through `ToolCallBehavior`.
 
-A **Planner** is a component that:
-1. Takes a natural language goal from the user
-2. Examines available kernel functions (your plugin library)
-3. Creates a sequence of function calls to achieve that goal
-4. Executes the plan step-by-step
-5. Returns the final result
+### How It Works
 
-### Planner vs Manual Function Chaining
+1. **Register Functions**: Mark your C# methods with `[KernelFunction]` and `[Description]` attributes
+2. **Enable Tool Calling**: Set `ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions`
+3. **Let AI Orchestrate**: The AI automatically discovers and chains your functions
 
-```mermaid
-graph LR
-    subgraph "Manual Chaining"
-        M1[Hard-coded<br/>Function Order] --> M2[Fixed Logic] --> M3[No Adaptation]
-    end
-    
-    subgraph "Planner-Based"
-        P1[Dynamic<br/>Function Selection] --> P2[AI-Driven Logic] --> P3[Adapts to Goal]
-    end
-    
-    style M1 fill:#ffe1e1
-    style P1 fill:#e1f5ff
-```
-
-**Manual Chaining:**
 ```csharp
-// You decide the order
-var weather = await kernel.InvokeAsync(getWeather, args);
-var flights = await kernel.InvokeAsync(searchFlights, args);
-var hotels = await kernel.InvokeAsync(findHotels, args);
+// Step 1: Define plugin functions
+public class CalendarPlugin
+{
+    [KernelFunction]
+    [Description("Gets today's schedule")]
+    public string GetSchedule() => "9am: Team meeting, 2pm: Code review";
+    
+    [KernelFunction]
+    [Description("Finds next available time slot for duration in minutes")]
+    public string FindAvailableSlot(int durationMinutes) => "3:30 PM";
+}
+
+public class EmailPlugin
+{
+    [KernelFunction]
+    [Description("Sends an email to specified recipient")]
+    public string SendEmail(string to, string subject, string body) 
+        => $"Email sent to {to}";
+}
+
+// Step 2: Register plugins
+kernel.Plugins.AddFromType<CalendarPlugin>();
+kernel.Plugins.AddFromType<EmailPlugin>();
+
+// Step 3: Enable automatic orchestration
+var settings = new OpenAIPromptExecutionSettings
+{
+    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+    Temperature = 0.0,  // Deterministic for function selection
+    MaxTokens = 4000
+};
+
+// Step 4: Give AI a goal - it figures out the steps!
+var goal = "Check my schedule and send a meeting invite for a 30-minute sync";
+var result = await kernel.InvokePromptAsync(goal, new(settings));
+
+// AI automatically:
+// 1. Calls CalendarPlugin.GetSchedule() to see what's on the calendar
+// 2. Calls CalendarPlugin.FindAvailableSlot(30) to find free time
+// 3. Calls EmailPlugin.SendEmail(...) with meeting details
+// 4. Returns formatted result
 ```
 
-**Planner-Based:**
-```csharp
-// AI decides the order based on the goal
-var plan = await planner.CreatePlanAsync("Plan a 3-day trip to Paris");
-var result = await plan.InvokeAsync(kernel);
-```
+### Why This is Better Than Explicit Planners
+
+✅ **Simpler Code**: No planner configuration, just enable tool calling  
+✅ **More Flexible**: AI adapts to any goal without code changes  
+✅ **Better Performance**: Direct function invocation without template generation  
+✅ **Easier Debugging**: Clear function call sequence in execution  
+✅ **Modern Standard**: Aligns with OpenAI function calling API
 
 ---
 
-## 🔧 Types of Planners
+## 💡 Complete Real-World Example: Travel Planning Assistant
 
-### 1. Function Calling Planner (Recommended - Modern Approach)
-
-The **FunctionCallingStepwisePlanner** uses native OpenAI/Azure function calling to orchestrate tasks. It's the most modern and efficient approach.
+Let's build a complete travel planning assistant that demonstrates real AI orchestration:
 
 ```csharp
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Planning;
-
-var kernel = Kernel.CreateBuilder()
-    .AddOpenAIChatCompletion("gpt-4", apiKey)
-    .Build();
-
-// Add plugins with functions
-kernel.ImportPluginFromType<WeatherPlugin>();
-kernel.ImportPluginFromType<TravelPlugin>();
-
-// Create planner
-var planner = new FunctionCallingStepwisePlanner();
-
-// Create and execute plan
-var result = await planner.ExecuteAsync(
-    kernel, 
-    "What's the weather in Paris and find me a 4-star hotel?"
-);
-
-Console.WriteLine(result);
-```
-
-**How it works:**
-```mermaid
-sequenceDiagram
-    participant User
-    participant Planner
-    participant AI
-    participant Functions
-    
-    User->>Planner: Goal: "Weather + Hotel"
-    Planner->>AI: Here's the goal + available functions
-    AI->>AI: Analyze & decide which functions needed
-    AI->>Functions: Call GetWeather("Paris")
-    Functions-->>AI: "Sunny, 22°C"
-    AI->>Functions: Call FindHotel("Paris", "4-star")
-    Functions-->>AI: "Hotel Ritz"
-    AI->>Planner: Combined result
-    Planner->>User: "Weather: Sunny, 22°C. Hotel: Hotel Ritz"
-```
-
-### 2. Handlebars Planner (Template-Based)
-
-The **HandlebarsPlanner** generates a plan template using Handlebars syntax, allowing for complex control flow.
-
-```csharp
-using Microsoft.SemanticKernel.Planning.Handlebars;
-
-var planner = new HandlebarsPlanner(
-    new HandlebarsPlannerOptions
-    {
-        MaxTokens = 4000
-    }
-);
-
-var plan = await planner.CreatePlanAsync(kernel, 
-    "Send an email summarizing today's weather in Seattle");
-
-// Inspect the plan template
-Console.WriteLine(plan.ToString());
-
-// Execute
-var result = await plan.InvokeAsync(kernel);
-```
-
-**Generated Plan Example:**
-```handlebars
-{{!-- Step 1: Get weather --}}
-{{set "weather" (WeatherPlugin-GetWeather location="Seattle")}}
-
-{{!-- Step 2: Summarize weather --}}
-{{set "summary" (TextPlugin-Summarize text=weather)}}
-
-{{!-- Step 3: Send email --}}
-{{EmailPlugin-SendEmail 
-    to="user@example.com" 
-    subject="Seattle Weather" 
-    body=summary}}
-```
-
-### 3. Sequential Planner (Legacy - For Reference)
-
-⚠️ **Note:** SequentialPlanner is older and less efficient. Use FunctionCallingStepwisePlanner for new projects.
-
-```csharp
-// Legacy approach (for reference only)
-#pragma warning disable SKEXP0060
-var planner = new SequentialPlanner(kernel);
-var plan = await planner.CreatePlanAsync("Translate 'Hello' to French and Spanish");
-var result = await kernel.InvokeAsync(plan);
-#pragma warning restore SKEXP0060
-```
-
----
-
-## 🚀 Building Your First Planner Application
-
-### Step 1: Set Up Kernel and Plugins
-
-```csharp
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Planning;
 using System.ComponentModel;
 
-var builder = Kernel.CreateBuilder();
-builder.AddOpenAIChatCompletion("gpt-4", Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
-var kernel = builder.Build();
-
-// Create plugins with well-described functions
-kernel.ImportPluginFromType<MathPlugin>();
-kernel.ImportPluginFromType<TextPlugin>();
-```
-
-### Step 2: Create Function Plugins
-
-```csharp
-public class MathPlugin
+// Define travel-related plugins
+public class WeatherPlugin
 {
     [KernelFunction]
-    [Description("Adds two numbers together")]
-    public double Add(
-        [Description("The first number")] double a,
-        [Description("The second number")] double b)
+    [Description("Gets weather forecast for a city and dates")]
+    public string GetWeather(string city, string dates)
     {
-        return a + b;
-    }
-
-    [KernelFunction]
-    [Description("Multiplies two numbers")]
-    public double Multiply(
-        [Description("The first number")] double a,
-        [Description("The second number")] double b)
-    {
-        return a * b;
-    }
-
-    [KernelFunction]
-    [Description("Calculates the square root of a number")]
-    public double SquareRoot(
-        [Description("The number to find square root of")] double number)
-    {
-        return Math.Sqrt(number);
+        return $"Paris weather {dates}: 20°C, partly cloudy, 30% rain";
     }
 }
 
-public class TextPlugin
+public class FlightPlugin
 {
     [KernelFunction]
-    [Description("Converts text to uppercase")]
-    public string ToUpper([Description("The text to convert")] string text)
+    [Description("Searches for flights between cities on given dates")]
+    public string SearchFlights(string from, string to, string dates)
     {
-        return text.ToUpper();
+        return $"Found flights {from}→{to} on {dates}: $450-$680";
     }
+}
 
+public class HotelPlugin
+{
     [KernelFunction]
-    [Description("Counts the words in a text")]
-    public int CountWords([Description("The text to count words in")] string text)
+    [Description("Finds hotels in a city with ratings and prices")]
+    public string FindHotels(string city, int nights)
     {
-        return text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        return $"Hotels in {city} for {nights} nights: $120-$300/night";
+    }
+}
+
+public class BudgetPlugin
+{
+    [KernelFunction]
+    [Description("Calculates if expenses fit within budget")]
+    public string CheckBudget(string expenses, decimal budget)
+    {
+        return $"Total estimated: $2100. Budget: ${budget}. Status: Within budget";
+    }
+}
+
+// Main orchestration
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        // Setup kernel with API key
+        var builder = Kernel.CreateBuilder();
+        builder.AddOpenAIChatCompletion(
+            modelId: "gpt-4o-mini",
+            apiKey: Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+        );
+        
+        // Register all plugins
+        builder.Plugins.AddFromType<WeatherPlugin>();
+        builder.Plugins.AddFromType<FlightPlugin>();
+        builder.Plugins.AddFromType<HotelPlugin>();
+        builder.Plugins.AddFromType<BudgetPlugin>();
+        
+        var kernel = builder.Build();
+        
+        // Configure automatic orchestration
+        var settings = new OpenAIPromptExecutionSettings
+        {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            Temperature = 0.0,  // Deterministic for reliability
+            MaxTokens = 4000
+        };
+        
+        // Complex multi-step goal
+        var goal = @"
+            I want to plan a 3-day trip to Paris in May.
+            Check the weather, find flights from New York,
+            recommend hotels, and verify it fits my $3000 budget.
+            Give me a summary with recommendations.
+        ";
+        
+        Console.WriteLine("🎯 Goal: " + goal);
+        Console.WriteLine("\n🤖 AI orchestrating...\n");
+        
+        var result = await kernel.InvokePromptAsync(goal, new(settings));
+        
+        Console.WriteLine("✅ Result:");
+        Console.WriteLine(result);
     }
 }
 ```
 
-### Step 3: Create and Execute Plan
+### What Happened Behind the Scenes
 
-```csharp
-var planner = new FunctionCallingStepwisePlanner();
+When you run this code, the AI automatically:
 
-// Complex goal requiring multiple functions
-var goal = "Calculate (5 + 3) * 2, then find its square root, and tell me the result in uppercase";
+1. **Analyzes the goal**: Identifies need for weather, flights, hotels, and budget checks
+2. **Plans function sequence**:
+   - `WeatherPlugin.GetWeather("Paris", "May")` → Check if good weather
+   - `FlightPlugin.SearchFlights("New York", "Paris", "May")` → Find flights
+   - `HotelPlugin.FindHotels("Paris", 3)` → Find accommodations
+   - `BudgetPlugin.CheckBudget(expenses, 3000)` → Verify budget
+3. **Executes functions**: Calls each in optimal order
+4. **Synthesizes results**: Formats a human-readable summary
 
-var result = await planner.ExecuteAsync(kernel, goal);
-
-Console.WriteLine($"Result: {result}");
-// Output: Result: 4.0 (formatted based on execution)
-```
+**No manual coding of the workflow!** Change the goal to "Berlin in October with $2000 budget" and the same code adapts automatically.
 
 ---
 
-## 💡 Real-World Planning Patterns
+## 🏗️ Step-by-Step: Build Your First Orchestration App
 
-### Pattern 1: Research Assistant
+Let's build a personal assistant that manages your calendar and email.
+
+### Step 1: Create Plugin Functions
+
+Create well-described functions that the AI can discover:
 
 ```csharp
-public class ResearchPlugin
+using System.ComponentModel;
+using Microsoft.SemanticKernel;
+
+public class CalendarPlugin
 {
     [KernelFunction]
-    [Description("Searches the web for information on a topic")]
-    public async Task<string> WebSearch(
-        [Description("The search query")] string query)
+    [Description("Gets the user's schedule for today with event times and descriptions")]
+    public string GetTodaySchedule()
     {
-        // Implementation using web search API
-        return await SearchWebAsync(query);
+        return @"
+            9:00 AM - Team Standup (30 min)
+            11:00 AM - Client Presentation (60 min)
+            2:00 PM - Code Review (45 min)
+            4:00 PM - Free slot
+        ";
     }
-
+    
     [KernelFunction]
-    [Description("Summarizes a long text into key points")]
-    public string Summarize(
-        [Description("The text to summarize")] string text,
-        [Description("Maximum number of sentences")] int maxSentences = 3)
+    [Description("Finds the next available time slot for a meeting of specified duration in minutes")]
+    public string FindAvailableSlot(
+        [Description("Meeting duration in minutes")] int durationMinutes)
     {
-        // Implementation
-        return SummarizeText(text, maxSentences);
+        // Simulate finding free time
+        return $"Next available slot: 4:00 PM (can fit {durationMinutes} min meeting)";
     }
-
+    
     [KernelFunction]
-    [Description("Saves content to a file")]
-    public void SaveToFile(
-        [Description("The content to save")] string content,
-        [Description("The filename")] string filename)
+    [Description("Adds a meeting to the calendar with title, time, and duration")]
+    public string AddMeeting(
+        [Description("Meeting title")] string title,
+        [Description("Start time (e.g., 4:00 PM)")] string startTime,
+        [Description("Duration in minutes")] int duration)
     {
-        File.WriteAllText(filename, content);
+        return $"Added: '{title}' at {startTime} for {duration} minutes";
     }
 }
 
-// Usage
-var planner = new FunctionCallingStepwisePlanner();
-var result = await planner.ExecuteAsync(kernel, 
-    "Research 'Semantic Kernel planners', summarize the findings in 3 sentences, and save to research.txt");
+public class EmailPlugin
+{
+    [KernelFunction]
+    [Description("Sends an email to a recipient with subject and body")]
+    public string SendEmail(
+        [Description("Recipient email address")] string to,
+        [Description("Email subject line")] string subject,
+        [Description("Email body content")] string body)
+    {
+        return $"✉️ Email sent to {to}\nSubject: {subject}\nBody preview: {body.Substring(0, Math.Min(50, body.Length))}...";
+    }
+}
 ```
 
-### Pattern 2: Data Processing Pipeline
+### Step 2: Setup Kernel and Register Plugins
+
+```csharp
+using Microsoft.SemanticKernel;
+
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        // Build kernel
+        var builder = Kernel.CreateBuilder();
+        builder.AddOpenAIChatCompletion(
+            modelId: "gpt-4o-mini",
+            apiKey: Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+        );
+        
+        var kernel = builder.Build();
+        
+        // Register plugins - AI will discover these functions
+        kernel.Plugins.AddFromType<CalendarPlugin>();
+        kernel.Plugins.AddFromType<EmailPlugin>();
+        
+        Console.WriteLine("✅ Plugins registered: CalendarPlugin, EmailPlugin\n");
+```
+
+### Step 3: Enable Automatic Orchestration
+
+```csharp
+        // Configure AI to automatically call functions
+        var settings = new OpenAIPromptExecutionSettings
+        {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            Temperature = 0.0,  // Deterministic behavior
+            MaxTokens = 4000
+        };
+```
+
+### Step 4: Give AI Complex Goals
+
+```csharp
+        // Goal 1: Simple query
+        var goal1 = "What's on my schedule today?";
+        Console.WriteLine($"🎯 Goal: {goal1}");
+        var result1 = await kernel.InvokePromptAsync(goal1, new(settings));
+        Console.WriteLine($"🤖 {result1}\n");
+        
+        // Goal 2: Multi-step orchestration
+        var goal2 = "Find a free slot for a 45-minute meeting and send an invite to alice@company.com";
+        Console.WriteLine($"🎯 Goal: {goal2}");
+        var result2 = await kernel.InvokePromptAsync(goal2, new(settings));
+        Console.WriteLine($"🤖 {result2}\n");
+        
+        // Goal 3: Complex workflow
+        var goal3 = @"
+            Check my calendar, find a 30-minute slot, 
+            add a meeting called 'Budget Review',
+            and email the team at team@company.com with meeting details.
+        ";
+        Console.WriteLine($"🎯 Goal: {goal3}");
+        var result3 = await kernel.InvokePromptAsync(goal3, new(settings));
+        Console.WriteLine($"🤖 {result3}");
+    }
+}
+```
+
+### What Happens When You Run This
+
+**Goal 1** (Simple):
+- AI calls `CalendarPlugin.GetTodaySchedule()`
+- Returns formatted schedule
+
+**Goal 2** (Multi-step):
+1. AI calls `CalendarPlugin.FindAvailableSlot(45)`
+2. AI calls `EmailPlugin.SendEmail("alice@company.com", ...)`
+3. Returns confirmation
+
+**Goal 3** (Complex workflow):
+1. AI calls `CalendarPlugin.GetTodaySchedule()` to understand availability
+2. AI calls `CalendarPlugin.FindAvailableSlot(30)` to find free time
+3. AI calls `CalendarPlugin.AddMeeting("Budget Review", ...)`
+4. AI calls `EmailPlugin.SendEmail("team@company.com", ...)` with details
+5. Returns comprehensive summary
+
+**The AI figures out all these steps automatically!**
+
+---
+
+## 🎯 Common Orchestration Patterns
+
+### Pattern 1: Data Processing Pipeline
+
+**Use Case**: Extract → Transform → Load workflows
 
 ```csharp
 public class DataPlugin
 {
     [KernelFunction]
-    [Description("Reads data from a CSV file")]
-    public string ReadCSV([Description("Path to CSV file")] string filePath)
-    {
-        return File.ReadAllText(filePath);
-    }
+    [Description("Fetches raw data from database for a given table name")]
+    public string FetchData(string tableName) 
+        => $"[Raw data from {tableName}: 1000 rows]";
 
     [KernelFunction]
-    [Description("Filters data based on a condition")]
-    public string FilterData(
-        [Description("The data to filter")] string data,
-        [Description("The filter condition")] string condition)
-    {
-        // Implementation
-        return ApplyFilter(data, condition);
-    }
+    [Description("Cleans and validates data removing duplicates and nulls")]
+    public string CleanData(string rawData) 
+        => "[Cleaned data: 950 valid rows]";
 
     [KernelFunction]
-    [Description("Calculates statistics on numeric data")]
-    public string CalculateStats([Description("The numeric data")] string data)
-    {
-        // Implementation
-        return ComputeStatistics(data);
-    }
+    [Description("Aggregates data by specified grouping column")]
+    public string AggregateData(string cleanedData, string groupBy) 
+        => $"[Aggregated by {groupBy}: 50 groups]";
 
     [KernelFunction]
-    [Description("Generates a visualization from data")]
-    public string CreateChart(
-        [Description("The data to visualize")] string data,
-        [Description("Chart type (bar, line, pie)")] string chartType)
-    {
-        // Implementation
-        return GenerateChart(data, chartType);
-    }
+    [Description("Exports processed data to CSV format")]
+    public string ExportToCSV(string data, string filename) 
+        => $"Exported to {filename}.csv";
 }
 
-// Usage
-var goal = @"Read sales_data.csv, filter for sales > $1000, 
-              calculate average and total, then create a bar chart";
-
-var result = await planner.ExecuteAsync(kernel, goal);
+// AI orchestrates entire ETL pipeline
+var goal = "Get customer data, clean it, group by region, and export to customer_report.csv";
+var result = await kernel.InvokePromptAsync(goal, new(settings));
+// AI automatically: FetchData → CleanData → AggregateData → ExportToCSV
 ```
 
-### Pattern 3: Multi-Agent Collaboration
+### Pattern 2: Customer Support Automation
+
+**Use Case**: Intelligent ticket triage and response
 
 ```csharp
-public class AgentPlugin
+public class SupportPlugin
 {
-    private readonly Kernel _kernel;
+    [KernelFunction]
+    [Description("Retrieves customer's account information and history")]
+    public string GetCustomerInfo(string customerId)
+        => $"Customer #{customerId}: Premium plan, 2 years tenure, 3 previous tickets";
 
     [KernelFunction]
-    [Description("Expert at writing technical documentation")]
-    public async Task<string> TechnicalWriter(
-        [Description("The topic to write about")] string topic)
-    {
-        return await _kernel.InvokePromptAsync($"Write technical documentation about: {topic}");
-    }
+    [Description("Searches knowledge base for solutions to customer issues")]
+    public string SearchKnowledgeBase(string issue)
+        => $"Found 3 articles about '{issue}'";
 
     [KernelFunction]
-    [Description("Expert at code review and quality assurance")]
-    public async Task<string> CodeReviewer(
-        [Description("The code or documentation to review")] string content)
-    {
-        return await _kernel.InvokePromptAsync($"Review this for technical accuracy: {content}");
-    }
+    [Description("Creates a support ticket with priority level")]
+    public string CreateTicket(string customerId, string issue, string priority)
+        => $"Ticket #{new Random().Next(1000, 9999)} created ({priority} priority)";
 
     [KernelFunction]
-    [Description("Expert at editing for clarity and readability")]
-    public async Task<string> Editor(
-        [Description("The content to edit")] string content)
-    {
-        return await _kernel.InvokePromptAsync($"Edit for clarity: {content}");
-    }
+    [Description("Sends automated response email to customer")]
+    public string SendResponse(string customerId, string message)
+        => $"Email sent to customer #{customerId}";
 }
 
-// Usage: Create polished documentation
-var goal = "Write documentation about semantic kernel planners, have it reviewed, then edited for clarity";
-var result = await planner.ExecuteAsync(kernel, goal);
+// AI handles complex support scenarios
+var goal = @"
+    Customer #4521 reports 'app crashing on login'.
+    Check their account, search for known solutions,
+    create a high-priority ticket if needed,
+    and send a response with troubleshooting steps.
+";
+var result = await kernel.InvokePromptAsync(goal, new(settings));
+```
+
+### Pattern 3: Content Moderation Workflow
+
+**Use Case**: Multi-stage content review
+
+```csharp
+public class ModerationPlugin
+{
+    [KernelFunction]
+    [Description("Analyzes content for policy violations and returns risk score")]
+    public string AnalyzeContent(string content)
+        => "Risk score: 0.3 (moderate), flags: language";
+
+    [KernelFunction]
+    [Description("Checks user's history for previous violations")]
+    public string CheckUserHistory(string userId)
+        => $"User #{userId}: 1 warning, 0 strikes";
+
+    [KernelFunction]
+    [Description("Applies moderation action: approve, flag for review, or remove")]
+    public string ApplyAction(string contentId, string action)
+        => $"Content #{contentId}: {action}";
+
+    [KernelFunction]
+    [Description("Notifies user about moderation decision")]
+    public string NotifyUser(string userId, string decision, string reason)
+        => $"User #{userId} notified: {decision} - {reason}";
+}
+
+// AI makes context-aware moderation decisions
+var goal = @"
+    Review content #7834 from user #2234.
+    Analyze for violations, check user's history,
+    decide appropriate action, and notify user with explanation.
+";
+var result = await kernel.InvokePromptAsync(goal, new(settings));
+```
+
+### Pattern 4: Multi-Source Research Synthesis
+
+**Use Case**: Gather and synthesize information from multiple sources
+
+```csharp
+public class ResearchPlugin
+{
+    [KernelFunction]
+    [Description("Searches academic papers and returns titles with summaries")]
+    public string SearchPapers(string topic)
+        => $"Found 5 papers on {topic}";
+
+    [KernelFunction]
+    [Description("Searches web for recent news articles on topic")]
+    public string SearchNews(string topic)
+        => $"Found 10 news articles on {topic}";
+
+    [KernelFunction]
+    [Description("Extracts key statistics and data points from source")]
+    public string ExtractStats(string source)
+        => "Key stats: 45% growth, $2.3B market size";
+
+    [KernelFunction]
+    [Description("Generates comprehensive report from gathered information")]
+    public string GenerateReport(string topic, string sources)
+        => $"Research report on {topic} (3 pages)";
+}
+
+// AI orchestrates comprehensive research
+var goal = @"
+    Research 'AI agent market trends'.
+    Search academic papers and news, extract key statistics,
+    and generate a comprehensive market report.
+";
+var result = await kernel.InvokePromptAsync(goal, new(settings));
 ```
 
 ---
 
-## 🎨 Planner Configuration & Best Practices
+## ⚙️ Configuration & Best Practices
 
-### Configuration Options
+### Configuration Options for Automatic Function Calling
 
 ```csharp
-var planner = new FunctionCallingStepwisePlanner(
-    new FunctionCallingStepwisePlannerOptions
-    {
-        MaxIterations = 10,              // Max steps in plan
-        MaxTokens = 4000,                // Token limit for planning
-        ExecutionSettings = new OpenAIPromptExecutionSettings
-        {
-            Temperature = 0.0,            // Deterministic planning
-            TopP = 0.1
-        }
-    }
-);
+var settings = new OpenAIPromptExecutionSettings
+{
+    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+    
+    Temperature = 0.0,        // 0.0 = Deterministic, 0.7 = Creative
+    MaxTokens = 4000,         // Limit response length
+    TopP = 1.0,               // Nucleus sampling
+    FrequencyPenalty = 0.0,   // Reduce repetition
+    PresencePenalty = 0.0     // Encourage topic diversity
+};
 ```
+
+**Recommended Settings**:
+- **Temperature = 0.0**: For function calling (consistent, reliable behavior)
+- **MaxTokens = 4000+**: Enough for multi-step workflows
+- **TopP = 1.0**: Default nucleus sampling
+- **Penalties = 0.0**: Not typically needed for function orchestration
 
 ### Best Practices
 
 ✅ **DO:**
-- Write detailed function descriptions (the AI uses these to select functions)
-- Use clear, descriptive parameter names and descriptions
-- Keep functions focused on single responsibilities
-- Test functions individually before using with planners
-- Set appropriate `MaxIterations` to prevent infinite loops
-- Use low temperature (0.0-0.3) for consistent planning
-- Log plan execution steps for debugging
-- Handle errors gracefully in functions
+- ✅ Write **detailed function descriptions** - AI uses these to select functions
+- ✅ Use **clear parameter names** with `[Description]` attributes
+- ✅ Keep functions **single-purpose** (one responsibility per function)
+- ✅ Test functions **individually** before orchestration
+- ✅ Use **Temperature = 0.0** for deterministic function selection
+- ✅ **Log function calls** using kernel events for debugging
+- ✅ **Handle errors gracefully** - return meaningful error messages
+- ✅ **Validate inputs** in function implementations
 
 ❌ **DON'T:**
-- Create overly complex functions with many parameters
-- Use vague function descriptions like "Does stuff"
-- Mix unrelated functionality in one function
-- Forget to add [Description] attributes
-- Allow unbounded recursion or loops
-- Use high temperature for planning (leads to inconsistent results)
-- Expose sensitive operations without validation
+- ❌ Use vague descriptions like "Does stuff" or "Processes data"
+- ❌ Create functions with **10+ parameters** (split into multiple functions)
+- ❌ Mix unrelated functionality in one function
+- ❌ Forget `[KernelFunction]` and `[Description]` attributes
+- ❌ Use **high temperature** (>0.5) for function calling - causes inconsistency
+- ❌ Expose sensitive operations without proper validation
+- ❌ Return cryptic error messages - AI needs clear context
 
 ---
 
-## 🔍 Debugging Plans
+## 🔍 Debugging & Observability
 
-### Inspecting Plan Steps
+### Tracing Function Calls
 
-```csharp
-// With HandlebarsPlanner, you can see the generated plan
-var planner = new HandlebarsPlanner();
-var plan = await planner.CreatePlanAsync(kernel, "Your goal here");
-
-Console.WriteLine("=== Generated Plan ===");
-Console.WriteLine(plan.ToString());  // Shows Handlebars template
-Console.WriteLine("=====================");
-
-var result = await plan.InvokeAsync(kernel);
-```
-
-### Tracing Execution
+Use kernel events to see exactly what the AI is doing:
 
 ```csharp
-// Add a hook to trace function calls
+// Add event handlers to trace execution
 kernel.FunctionInvoking += (sender, e) =>
 {
     Console.WriteLine($"🔧 Calling: {e.Function.PluginName}.{e.Function.Name}");
-    Console.WriteLine($"   Args: {string.Join(", ", e.Arguments.Select(a => $"{a.Key}={a.Value}"))}");
+    var args = string.Join(", ", e.Arguments.Select(a => $"{a.Key}={a.Value}"));
+    Console.WriteLine($"   Args: {args}");
 };
 
 kernel.FunctionInvoked += (sender, e) =>
 {
     Console.WriteLine($"✅ Completed: {e.Function.Name}");
-    Console.WriteLine($"   Result: {e.Result}");
-    Console.WriteLine();
+    Console.WriteLine($"   Result: {e.Result}\n");
 };
 
-// Now run your planner
-var result = await planner.ExecuteAsync(kernel, goal);
+// Now run orchestration
+var result = await kernel.InvokePromptAsync(goal, new(settings));
+```
+
+**Example Output:**
+```
+🔧 Calling: CalendarPlugin.GetTodaySchedule
+   Args: 
+✅ Completed: GetTodaySchedule
+   Result: 9:00 AM - Team Meeting...
+
+🔧 Calling: CalendarPlugin.FindAvailableSlot
+   Args: durationMinutes=30
+✅ Completed: FindAvailableSlot
+   Result: Next available: 4:00 PM
+
+🔧 Calling: EmailPlugin.SendEmail
+   Args: to=team@company.com, subject=Meeting Invite, body=...
+✅ Completed: SendEmail
+   Result: Email sent to team@company.com
+```
+
+### Error Handling
+
+Always wrap orchestration in try-catch for production:
+
+```csharp
+try
+{
+    var result = await kernel.InvokePromptAsync(goal, new(settings));
+    Console.WriteLine($"Success: {result}");
+}
+catch (HttpOperationException ex)
+{
+    Console.WriteLine($"API Error: {ex.Message}");
+    // Handle rate limits, auth issues
+}
+catch (KernelException ex)
+{
+    Console.WriteLine($"Kernel Error: {ex.Message}");
+    // Handle function invocation failures
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Unexpected Error: {ex.Message}");
+    // Log and alert
+}
 ```
 
 **Example Output:**
@@ -494,13 +652,6 @@ var result = await planner.ExecuteAsync(kernel, goal);
    Args: number=16
 ✅ Completed: SquareRoot
    Result: 4
-```
-
----
-
-## Error Handling in Plans
-
-### Handling Function Failures
 ```
 
 ---
@@ -555,18 +706,34 @@ catch (KernelException ex)
 
 ---
 
-## 🔄 Advanced: Manual Planning
+## 🔄 Advanced: Plan Inspection with HandlebarsPlanner
 
-Sometimes you want more control. You can manually inspect and modify plans:
+For scenarios requiring **auditability** or **plan modification**, use HandlebarsPlanner to generate explicit templates:
 
 ```csharp
-// Create plan without executing
-var planner = new HandlebarsPlanner();
-var plan = await planner.CreatePlanAsync(kernel, "Your goal");
+using Microsoft.SemanticKernel.Planning.Handlebars;
 
-// Inspect the plan
-Console.WriteLine("Plan preview:");
+// Create planner that generates templates
+var planner = new HandlebarsPlanner(new HandlebarsPlannerOptions
+{
+    AllowLoops = true,  // Enable iterative processing
+    ExecutionSettings = new OpenAIPromptExecutionSettings
+    {
+        Temperature = 0.0,
+        MaxTokens = 4000
+    }
+});
+
+// Generate plan template
+var plan = await planner.CreatePlanAsync(kernel, "Your complex goal");
+
+// Inspect the generated Handlebars template
+Console.WriteLine("=== Generated Plan Template ===");
 Console.WriteLine(plan.ToString());
+Console.WriteLine("================================");
+
+// Optionally save for auditing
+await File.WriteAllTextAsync("audit_plan.hbs", plan.ToString());
 
 // Ask user for confirmation
 Console.Write("Execute this plan? (y/n): ");
@@ -579,39 +746,93 @@ if (Console.ReadLine()?.ToLower() == "y")
 
 ---
 
-## 📊 Comparison: When to Use Each Planner
+## 🧩 Advanced Pattern: Hierarchical Planning
 
-| Feature | FunctionCallingStepwise | Handlebars | Sequential (Legacy) |
-|---------|------------------------|------------|-------------------|
-| **Modern** | ✅ Yes | ✅ Yes | ❌ No |
-| **Performance** | ⚡ Fast | ⚡ Fast | 🐌 Slow |
-| **Flexibility** | 🔥 High | 🔥 High | ⭐ Medium |
-| **Loops/Conditionals** | ✅ Yes | ✅ Yes | ❌ No |
-| **Inspection** | ⚠️ Limited | ✅ Easy | ✅ Easy |
-| **Use Case** | General purpose, real-time | Complex workflows | Not recommended |
+For truly complex scenarios, you can implement **hierarchical planning** where a top-level plan generates sub-plans dynamically:
 
-**Recommendation:**
-- **Default choice:** FunctionCallingStepwisePlanner
-- **Complex workflows with conditionals:** HandlebarsPlanner
-- **Avoid:** SequentialPlanner (use others instead)
+### Workflow Overview
+
+1. **High-level decomposition**: Ask LLM: "Create a high-level plan for [complex goal]" - it returns steps like ["Research topic", "Draft outline", "Write sections"]
+2. **Dynamic sub-planning**: For each high-level step, ask: "Generate a Handlebars plan for [this step]" - it creates detailed templates
+3. **Function registration**: Dynamically register each generated template as a plugin function using `kernel.CreateFunctionFromPrompt()`
+4. **Top-level orchestration**: Create a master Handlebars plan that calls these newly registered functions to orchestrate the overall goal
+
+This pattern enables **hierarchical decomposition** where complex tasks are broken into manageable subtasks, each with its own specialized plan. The system builds its own "playbook" dynamically based on the problem at hand—a self-extending architecture where AI-generated plans become callable functions.
+
+### Real-World Example
+
+```csharp
+// Step 1: Get high-level plan
+var planningPrompt = "Break down 'Write technical documentation' into 3-5 major phases";
+var highLevelSteps = await kernel.InvokePromptAsync(planningPrompt);
+// Returns: ["Research APIs", "Draft structure", "Write content", "Review & polish"]
+
+// Step 2: For each step, create detailed plan
+foreach (var step in highLevelSteps)
+{
+    var detailedPlan = await handlebarsPlanner.CreatePlanAsync(
+        kernel, 
+        $"Create detailed plan for: {step}"
+    );
+    
+    // Step 3: Register as function
+    var function = kernel.CreateFunctionFromPrompt(
+        detailedPlan.ToString(),
+        functionName: step.Replace(" ", ""),
+        description: $"Executes: {step}"
+    );
+    
+    kernel.Plugins.AddFromFunctions("DynamicPlan", new[] { function });
+}
+
+// Step 4: Execute top-level orchestration
+var masterPlan = await handlebarsPlanner.CreatePlanAsync(
+    kernel,
+    "Execute all documentation phases in sequence"
+);
+var result = await masterPlan.InvokeAsync(kernel);
+```
+
+This creates a **self-extending system** validated by research (see [Research & Further Reading](#-research--further-reading) section below).
 
 ---
 
-## 🎯 Planner Selection Decision Tree
+## 📊 Approach Comparison
+
+| Feature | Automatic Function Calling | HandlebarsPlanner | Hierarchical Planning |
+|---------|---------------------------|-------------------|----------------------|
+| **Ease of Use** | ✅ Simple | 🟡 Moderate | 🔴 Complex |
+| **Performance** | ⚡ Fast | ⚡ Fast | 🟡 Multi-step |
+| **Plan Inspection** | ❌ Opaque | ✅ Full visibility | ✅ Per-level visibility |
+| **Loops/Conditionals** | ❌ No | ✅ Yes | ✅ Yes (nested) |
+| **Use Case** | 90% of scenarios | Auditable workflows | Complex decomposition |
+| **Setup Complexity** | 1 line | 5-10 lines | 20+ lines |
+
+**Recommendation:**
+- **Default choice (90% of cases):** `ToolCallBehavior.AutoInvokeKernelFunctions`
+- **Auditing/compliance needs:** HandlebarsPlanner
+- **Multi-level decomposition:** Hierarchical Planning pattern
+- **Simple tasks:** Just use prompt without orchestration
+
+---
+
+## 🎯 Decision Tree: Which Approach to Use?
 
 ```mermaid
 graph TD
-    A[Need a Planner?] --> B{Complex<br/>Control Flow?}
-    B -->|Yes<br/>loops/conditions| C[HandlebarsPlanner]
-    B -->|No<br/>simple sequence| D{Need to inspect<br/>plan before execution?}
-    D -->|Yes| C
-    D -->|No| E[FunctionCallingStepwisePlanner]
+    A[Need AI Orchestration?] --> B{Multi-level<br/>decomposition?}
+    B -->|Yes| C[Hierarchical Planning]
+    B -->|No| D{Need plan<br/>inspection/audit?}
+    D -->|Yes| E[HandlebarsPlanner]
+    D -->|No| F[Automatic Function Calling]
     
-    C --> F[Use Handlebars]
-    E --> G[Use FunctionCalling]
+    C --> G[Use hierarchical pattern]
+    E --> H[Use HandlebarsPlanner]
+    F --> I[Use ToolCallBehavior.AutoInvoke]
     
-    style G fill:#e1f5ff
-    style F fill:#ffe1f5
+    style I fill:#e1f5ff
+    style H fill:#ffe1f5
+    style G fill:#fff5e1
 ```
 
 ---
@@ -684,16 +905,16 @@ var result = await plan.InvokeAsync(kernel);
 
 ## 🎓 Key Takeaways
 
-1. **Planners = AI Orchestrators** - They automatically select and sequence functions to achieve goals
-2. **Function Descriptions Matter** - Clear descriptions help AI choose the right functions
-3. **FunctionCallingStepwisePlanner** - Best default choice for most scenarios
-4. **HandlebarsPlanner** - Use for complex workflows with loops/conditionals
-5. **Debug with Events** - Hook into `FunctionInvoking`/`FunctionInvoked` to trace execution
-6. **Low Temperature** - Use 0.0-0.3 for consistent, deterministic planning
-7. **Error Handling** - Always wrap plan execution in try-catch
-8. **Test Functions First** - Verify individual functions work before planning
-9. **Limit Iterations** - Set `MaxIterations` to prevent runaway plans
-10. **Approval Gates** - For sensitive operations, review plans before execution
+1. **Modern Orchestration** - Use `ToolCallBehavior.AutoInvokeKernelFunctions` for 90% of scenarios
+2. **Function Descriptions are Critical** - AI selects functions based on `[Description]` attributes
+3. **Temperature = 0.0** - Always use low temperature for reliable function calling
+4. **Plugin Design Matters** - Keep functions single-purpose with clear parameters
+5. **Debugging with Events** - Use `FunctionInvoking`/`FunctionInvoked` kernel events
+6. **Error Handling** - Wrap orchestration in try-catch for production
+7. **HandlebarsPlanner for Auditing** - Use only when you need explicit plan templates
+8. **Test Functions Independently** - Verify functions work before orchestration
+9. **Hierarchical Planning** - For complex multi-level decomposition
+10. **Avoid Deprecated APIs** - No FunctionCallingStepwisePlanner, SequentialPlanner
 
 ---
 
@@ -715,6 +936,26 @@ var result = await plan.InvokeAsync(kernel);
 ### GitHub Examples
 - [Semantic Kernel Samples - Planning](https://github.com/microsoft/semantic-kernel/tree/main/dotnet/samples/Concepts/Planning)
 - [Planner Examples Repository](https://github.com/microsoft/semantic-kernel/tree/main/python/samples/concepts/planning)
+
+---
+
+## 📖 Research & Further Reading
+
+### AgentOrchestra: Academic Validation of Hierarchical Planning
+
+The hierarchical meta-planning pattern described earlier is not merely theoretical—it has been validated in academic research. The **AgentOrchestra** paper ([Zhang et al., 2025, arXiv:2506.12508](https://arxiv.org/abs/2506.12508)) introduces the Tool-Environment-Agent (TEA) Protocol, which formalizes multi-agent systems with hierarchical orchestration. Their framework achieved state-of-the-art results on the GAIA benchmark (83.39% accuracy), demonstrating the effectiveness of coordinated planning agents working with specialized sub-agents.
+
+The paper's **Tool Manager Agent** directly implements the meta-planning concept: it dynamically creates new MCP-compliant tools when existing capabilities are insufficient, validates them through automated testing, and registers them in a Tool Context Protocol (TCP) for reuse by other agents. During GAIA evaluation, the system generated over 50 tools with approximately 30% achieving cross-task reuse, proving that AI-generated functions can successfully generalize beyond their original context. This validates the "generate→validate→register→reuse" loop central to self-extending agent architectures.
+
+AgentOrchestra's architecture mirrors Semantic Kernel's plugin model: a central **Planning Agent** decomposes complex objectives and delegates sub-tasks to specialized agents (deep researcher, browser automation, data analyzer, tool manager). Each agent operates with domain-specific capabilities while the planning agent maintains global context and adapts strategies dynamically—precisely the pattern you'd implement using `ToolCallBehavior.AutoInvokeKernelFunctions` with dynamically registered plugin functions in modern Semantic Kernel applications.
+
+The TEA Protocol also formalizes bidirectional transformations between agents, tools, and environments (Agent-to-Tool, Tool-to-Agent, etc.), providing a theoretical foundation for treating agents as callable functions and vice versa. This research validates that the hierarchical planning patterns discussed in this tutorial represent production-ready architectural patterns, not experimental techniques.
+
+### Additional Research & Frameworks
+
+For those interested in exploring hierarchical AI agent systems further, the academic literature provides several relevant research directions. Papers on **task decomposition** explore how complex goals can be systematically broken into manageable sub-problems, while research on **multi-agent reinforcement learning** examines how specialized agents learn to coordinate effectively. The **AgentOrchestra paper** ([arXiv:2506.12508](https://arxiv.org/abs/2506.12508)) provides comprehensive implementation details including their React-based tool-calling architecture and systematic pipeline workflows for each specialized agent type.
+
+Microsoft's **AutoGen** framework ([Wu et al., 2023, arXiv:2308.08155](https://arxiv.org/abs/2308.08155)) represents another production implementation of multi-agent orchestration, focusing on conversational agent coordination patterns. The **LangChain** ecosystem ([LangGraph documentation](https://docs.langchain.com/oss/python/langgraph/overview), [Deep Agents](https://docs.langchain.com/oss/python/deepagents/overview)) has extensively documented agent architectures with tools, including their "Deep Agents" framework that supports planning, subagents, and long-term memory—patterns similar to hierarchical orchestration. Microsoft Research has also published work on **Copilot Studio** orchestration patterns, which share conceptual similarities with the planning approaches discussed here, particularly around dynamic skill composition and context management across complex workflows.
 
 ---
 

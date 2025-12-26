@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace SmartTaskOrchestrator;
 
@@ -24,15 +25,19 @@ public class CalendarPlugin
     // - Use `[KernelFunction]` attribute to make functions discoverable
     // - Use `[Description("...")]` to help the planner understand what each function does
     // - Return simple strings - the planner will interpret them
-    
+    [KernelFunction]
+    [Description("Returns formatted string of today's meeting. Example: 9:00 AM - Team Standup\n2:00 PM - Client Review")]
     public string GetTodaysSchedule()
     {
-        throw new NotImplementedException("TODO[N1]");
+        return "9:00 AM - Team Standup\n2:00 PM - Client Review\n4:00 PM - Planning";
     }
 
-    public string FindNextAvailableSlot(int durationMinutes)
+    [KernelFunction]
+    [Description("Find next available slot for a meeting with the specified duration.")]
+    public string FindNextAvailableSlot(
+        [Description("Meeting duration in minutes.")] int durationMinutes)
     {
-        throw new NotImplementedException("TODO[N1]");
+        return "Tomorrow at 9:00 AM";
     }
 }
 
@@ -54,15 +59,23 @@ public class EmailPlugin
     // - These are simulation functions (no real emails)
     // - Clear descriptions help the planner choose the right function
     // - Return status messages that confirm the action
-    
-    public string SendMeetingReminder(string recipient, string meetingTime, string topic)
+    [KernelFunction]
+    [Description("Sends meeting reminder and returns confirmation message.")]
+    public string SendMeetingReminder(
+        [Description("Meeting participant email or name")] string recipient, 
+        [Description("Meeting time")] string meetingTime, 
+        [Description("Meeting topic")] string topic)
     {
-        throw new NotImplementedException("TODO[N2]");
+        return $"✓ Reminder sent to {recipient} for {topic} at {meetingTime}";
     }
 
-    public string SendAgendaEmail(string recipient, string agenda)
+    [KernelFunction]
+    [Description("Sends agenda email")]
+    public string SendAgendaEmail(
+        [Description("Meeting participant email or name")] string recipient, 
+        [Description("Meeting agenda")] string agenda)
     {
-        throw new NotImplementedException("TODO[N2]");
+        return $"✓ Agenda {agenda} sent to {recipient}";
     }
 }
 
@@ -118,10 +131,18 @@ public class TaskOrchestrator
         // - Capture and return the final result from the planner
         //
         // Hints:
-        // - Import the planner: `using Microsoft.SemanticKernel.Planning;`
-        // - Use `await planner.CreatePlanAsync(kernel, goal)` to create the plan
-        // - Execute the plan with `await plan.InvokeAsync(kernel)`
-        // - The planner will automatically select and chain the right functions
-        throw new NotImplementedException("TODO[N3]");
+        // - FunctionCallingStepwisePlanner is deprecated - use automatic function calling instead
+        // - Configure OpenAIPromptExecutionSettings with ToolCallBehavior.AutoInvokeKernelFunctions
+        // - Set MaxTokens to 4000
+        // - The kernel will automatically discover and call your plugin functions
+        
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            MaxTokens = 4000
+        };
+
+        var result = await _kernel.InvokePromptAsync(goal, new(executionSettings));
+        return result.ToString();
     }
 }

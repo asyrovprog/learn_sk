@@ -104,6 +104,71 @@
 ## 12/08/2025
 - Step: lab
 - Id: 04
-- Status: started
+- Status: completed
 - Lab: lab/iter04
 - Topic: Planners & AI Orchestration - Smart Task Orchestrator
+
+## 12/10/2025
+- Step: topic
+- Id: 05
+- Status: completed
+- Topic: Advanced Prompt Engineering Patterns
+
+## 12/10/2025
+- Step: learn
+- Id: 05
+- Status: completed
+- Topic: Advanced Prompt Engineering Patterns
+- Summary: Advanced prompting techniques including few-shot and zero-shot prompting, Chain-of-Thought (CoT) reasoning, Self-Consistency for reliable outputs, Tree-of-Thoughts (ToT) for complex problem-solving, ReAct pattern for tool-using agents, meta-prompting, and prompt composition patterns with practical Semantic Kernel implementations.
+- Materials: learn/learn05.md
+
+## 12/10/2025
+- Step: quiz
+- Id: 05
+- Status: completed
+- Result: 90%
+- Topic: Advanced Prompt Engineering Patterns
+- Materials: learn/quiz05.md, learn/quiz05_answers.md
+
+## 12/10/2025
+- Step: lab
+- Id: 05
+- Status: completed
+- Lab: lab/iter05
+- Topic: Advanced Prompt Engineering Patterns - Chain-of-Thought Math Reasoner
+
+## 12/13/2025
+- Step: lab
+- Id: 05
+- Status: review_completed
+- Lab: lab/iter05
+- Notes: Fixed consensus percentage calculation bug in VotingResult. All tests passing with 100% consensus.
+
+## 12/13/2025
+- Step: topic
+- Id: 06
+- Status: completed
+- Topic: Multi-Modal AI Applications with Semantic Kernel
+
+## 12/13/2025
+- Step: learn
+- Id: 06
+- Status: completed
+- Topic: Multi-Modal AI Applications
+- Summary: Comprehensive guide to building multi-modal AI applications with Semantic Kernel. Covers GPT-4 Vision for image analysis (description, OCR, object detection, VQA), audio processing (Whisper STT, OpenAI TTS), real-time streaming with OpenAI Realtime API, WebSocket connections, Voice Activity Detection (Energy-based, WebRTC VAD, Silero VAD), cross-modal reasoning patterns, real-world applications (accessibility, product analysis, meeting summarization), and production best practices for image handling, cost optimization, and error management.
+- Materials: learn/learn06.md, learn/learn06_realtime.md
+
+## 12/25/2025
+- Step: quiz
+- Id: 06
+- Status: completed
+- Result: 90%
+- Topic: Multi-Modal AI Applications
+- Materials: learn/quiz06.md, learn/quiz06_answers.md
+
+## 12/25/2025
+- Step: lab
+- Id: 06
+- Status: started
+- Lab: lab/iter06
+- Topic: Multi-Modal AI Applications - Smart Image Classifier & Q&A Assistant with Confidence Scores
